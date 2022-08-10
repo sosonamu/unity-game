@@ -1,1 +1,108 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Avoid : MonoBehaviour
+        {
+        public bool isDead = false; //죽었는가? (대상 : 플레이어)
+        // <움직이는 기능>
+        public bool isDynamic = false; //움직이는 기능을 사용하는가?
+        public float DesigPos; //이동하고 싶은 Y 좌표 값
+        public float MovTime; //이동시간
+        public float EnterRadius; //움직이는 기능이 작동하는 범위 (대상 : 플레이어)
+        public float ExitRadius; //움직이는 기능이 정지하는 범위 (대상 : 플레이어)
+        public int Count; //움직일 횟수
+        public float WaitTime; //움직일 횟수 간 대기 시간
+        private int ActState = 1; //움직일 상태
+        private float Limit; //움직일 최대 거리
+        private Vector3 OriPos; //본래의 좌표 값
+        //========================================================================================
+
+        private void OnTriggerEnter2D(Collider2D collision){
+            if(collision.gameObject.name == "Form"){
+                Time.timeScale = 0;
+                isDead = true;
+                gameObject.GetComponent<BoxCollider2D>().enabled = false; //장애물의 콜라이더 비활성화
+            }    
+        }
+        private IEnumerator Timer(){
+            isDynamic = false;
+            yield return new WaitForSeconds(WaitTime);
+            isDynamic = true;
+        }
+        private void Dynamic(int State, int NP){
+        //========================================================================================
+            Vector3 Ppos = GameObject.Find("Player").transform.position;
+            Vector3 Tpos = transform.position;
+        if(DesigPos > 0){
+                    if(Tpos.y <= Limit && NP == 1){ //Tpos라고 하면 작동안하고 transform.position 만 작동함 왜일까?
+                        transform.position += new Vector3(0, DesigPos * Time.deltaTime / MovTime, 0);
+                    }
+                    else if(Tpos.y >= OriPos.y && NP == -1){
+                        transform.position -= new Vector3(0, DesigPos * Time.deltaTime / MovTime, 0);
+                    }
+                    else{
+                        if(NP == 1){
+                            transform.position = new Vector3(Tpos.x, OriPos.y + DesigPos, 0);
+                        } 
+                        else{
+                            transform.position = new Vector3(Tpos.x, OriPos.y, 0);
+                        }
+                        ActState = State;
+                        Count -= 1;
+                        StartCoroutine(Timer());
+                        return;
+                    }
+                }
+        else if(DesigPos < 0){
+                    if(Tpos.y >= Limit && NP == 1){
+                        transform.position += new Vector3(0, DesigPos * Time.deltaTime / MovTime, 0);
+                    }
+                    else if(Tpos.y <= OriPos.y && NP == -1){
+                        transform.position -= new Vector3(0, DesigPos * Time.deltaTime / MovTime, 0);
+                    }
+                    else{
+                        if(NP == 1){
+                            transform.position = new Vector3(Tpos.x, OriPos.y + DesigPos, 0);
+                        } 
+                        else{
+                            transform.position = new Vector3(Tpos.x, OriPos.y, 0);
+                        }
+                        ActState = State;
+                        Count -= 1;
+                        StartCoroutine(Timer());
+                        return;
+                    }
+                }
+        //========================================================================================
+        }
+
+        //========================================================================================
+
+        void Start(){
+        //========================================================================================
+        Limit = this.gameObject.transform.position.y + DesigPos;
+        OriPos = transform.position;
+        //========================================================================================
+        }
+
+        void Update(){
+        //========================================================================================
+        Vector3 Ppos = GameObject.Find("Player").transform.position;
+        Vector3 Tpos = transform.position;
+        //========================================================================================
+        if(isDynamic){
+            if(Tpos.x - Ppos.x <= EnterRadius && ActState == 1 && Count > 0){  
+                Dynamic(2, 1);
+            }
+            else if(ActState == 2 && Count > 0){ 
+                Dynamic(1, -1);
+            }
+            else if(Tpos.x - Ppos.x <= ExitRadius && Count <= 0 && ActState != 0){
+                Dynamic(0, -1);
+            }
+        }
+        //========================================================================================
+        }
+        }
 
